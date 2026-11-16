@@ -3,103 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Touch Isolate Test</title>
+  <title>Timing Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: -apple-system, sans-serif;
-      padding: 20px;
-      background: #f8fafc;
-    }
-    .btn {
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 20px;
-      background: #991B1B;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      -webkit-appearance: none;
-      touch-action: manipulation;
-      pointer-events: auto;
-      position: relative;
-      z-index: 1;
-      margin: 8px 0;
-    }
-    .btn-blue { background: #1e40af; }
-    .btn-green { background: #15803d; }
-    #output {
-      margin-top: 20px;
-      padding: 16px;
-      background: white;
-      border: 2px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 16px;
-      min-height: 40px;
-    }
-    .header {
-      background: #991B1B;
-      color: white;
-      padding: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      margin: -20px -20px 20px -20px;
-    }
+    .modal-backdrop { display: none; pointer-events: none; }
+    .modal-backdrop.active-modal { display: flex; pointer-events: auto; }
   </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col bg-slate-50">
 
-  <div class="header">
-    <h1 style="margin:0; font-size:20px;">Touch Test — sticky header present</h1>
+  <header class="bg-rose-900 text-white p-4 sticky top-0 z-30">
+    <h1 class="text-xl font-bold">Timing Test</h1>
+  </header>
+
+  <main class="flex-grow p-4">
+    <button type="button" id="btnA" class="bg-rose-800 text-white px-4 py-3 rounded-lg text-sm font-bold">
+      Button A (plain, no delegation)
+    </button>
+    <br><br>
+    <button type="button" data-action="testB" class="bg-blue-800 text-white px-4 py-3 rounded-lg text-sm font-bold">
+      Button B (delegation)
+    </button>
+    <div id="out" class="mt-4 p-3 bg-white rounded border">Output here</div>
+
+    <button type="button" onclick="document.getElementById('btnA').click()" class="mt-4 bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-bold">
+      Button C — re-trigger A via .click()
+    </button>
+    <button type="button" id="btnD" class="mt-4 bg-amber-600 text-white px-4 py-3 rounded-lg text-sm font-bold">
+      Button D — triggers silent reflow
+    </button>
+    <button type="button" id="btnE" class="mt-4 bg-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold">
+      Button E — console.log only (check Safari console later)
+    </button>
+  </main>
+
+  <div id="modal1" class="modal-backdrop fixed inset-0 bg-slate-900/60 z-50 items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-xl">Modal content</div>
   </div>
-
-  <button type="button" id="btn1" class="btn">Button 1 (addEventListener)</button>
-  <br>
-  <button type="button" id="btn2" class="btn btn-blue" onclick="document.getElementById('output').textContent = 'Button 2 tapped at ' + new Date().toLocaleTimeString()">Button 2 (onclick attr)</button>
-  <br>
-  <button type="button" id="btn3" class="btn btn-green" data-action="test" data-payload="hello">Button 3 (event delegation)</button>
-  <br>
-  <input type="text" placeholder="Text input" style="padding:12px; font-size:16px; border-radius:8px; border:1px solid #ccc; margin-top:8px;">
-  <br>
-  <select style="padding:12px; font-size:16px; border-radius:8px; border:1px solid #ccc; margin-top:8px;">
-    <option>Dropdown option</option>
-  </select>
-
-  <div id="output">Tap any button — result appears here.</div>
 
   <script>
     // Direct listener
-    document.getElementById('btn1').addEventListener('click', function() {
-      document.getElementById('output').textContent = 'Button 1 tapped at ' + new Date().toLocaleTimeString();
+    document.getElementById('btnA').addEventListener('click', function() {
+      document.getElementById('out').textContent = 'Button A tapped at ' + new Date().toLocaleTimeString();
     });
 
-    // Delegation listener (exactly like your app)
+    // Delegation listener (same pattern as app)
     document.addEventListener('click', function(e) {
       var el = e.target;
       while (el && el !== document.body) {
-        if (el.dataset && el.dataset.action === 'test') {
-          document.getElementById('output').textContent = 'Button 3 tapped at ' + new Date().toLocaleTimeString() + ' — payload: ' + el.dataset.payload;
+        if (el.dataset && el.dataset.action === 'testB') {
+          document.getElementById('out').textContent = 'Button B tapped at ' + new Date().toLocaleTimeString();
           return;
         }
         el = el.parentElement;
       }
     });
 
-    // Also catch touch events directly (iPad-specific)
-    document.addEventListener('touchstart', function(e) {
-      var el = e.target;
-      while (el && el !== document.body) {
-        if (el.dataset && el.dataset.action === 'test') {
-          document.getElementById('output').textContent = 'Button 3 TOUCHSTART at ' + new Date().toLocaleTimeString();
-          return;
-        }
-        el = el.parentElement;
-      }
+    // Button D — silent reflow (no alert)
+    document.getElementById('btnD').addEventListener('click', function() {
+      void document.body.offsetHeight;
+      void document.body.getBoundingClientRect();
+      document.getElementById('out').textContent = 'Reflow done at ' + new Date().toLocaleTimeString() + ' — now try Button A/B';
+    });
+
+    // Button E — log only
+    document.getElementById('btnE').addEventListener('click', function() {
+      console.log('Button E clicked at', new Date().toISOString());
     });
   </script>
 </body>
