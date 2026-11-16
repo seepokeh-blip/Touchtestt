@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Touch Isolate Test</title>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, sans-serif;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      background: #991B1B;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+      pointer-events: auto;
+      position: relative;
+      z-index: 1;
+      margin: 8px 0;
+    }
+    .btn-blue { background: #1e40af; }
+    .btn-green { background: #15803d; }
+    #output {
+      margin-top: 20px;
+      padding: 16px;
+      background: white;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+      min-height: 40px;
+    }
+    .header {
+      background: #991B1B;
+      color: white;
+      padding: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      margin: -20px -20px 20px -20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1 style="margin:0; font-size:20px;">Touch Test — sticky header present</h1>
+  </div>
+
+  <button type="button" id="btn1" class="btn">Button 1 (addEventListener)</button>
+  <br>
+  <button type="button" id="btn2" class="btn btn-blue" onclick="document.getElementById('output').textContent = 'Button 2 tapped at ' + new Date().toLocaleTimeString()">Button 2 (onclick attr)</button>
+  <br>
+  <button type="button" id="btn3" class="btn btn-green" data-action="test" data-payload="hello">Button 3 (event delegation)</button>
+  <br>
+  <input type="text" placeholder="Text input" style="padding:12px; font-size:16px; border-radius:8px; border:1px solid #ccc; margin-top:8px;">
+  <br>
+  <select style="padding:12px; font-size:16px; border-radius:8px; border:1px solid #ccc; margin-top:8px;">
+    <option>Dropdown option</option>
+  </select>
+
+  <div id="output">Tap any button — result appears here.</div>
+
+  <script>
+    // Direct listener
+    document.getElementById('btn1').addEventListener('click', function() {
+      document.getElementById('output').textContent = 'Button 1 tapped at ' + new Date().toLocaleTimeString();
+    });
+
+    // Delegation listener (exactly like your app)
+    document.addEventListener('click', function(e) {
+      var el = e.target;
+      while (el && el !== document.body) {
+        if (el.dataset && el.dataset.action === 'test') {
+          document.getElementById('output').textContent = 'Button 3 tapped at ' + new Date().toLocaleTimeString() + ' — payload: ' + el.dataset.payload;
+          return;
+        }
+        el = el.parentElement;
+      }
+    });
+
+    // Also catch touch events directly (iPad-specific)
+    document.addEventListener('touchstart', function(e) {
+      var el = e.target;
+      while (el && el !== document.body) {
+        if (el.dataset && el.dataset.action === 'test') {
+          document.getElementById('output').textContent = 'Button 3 TOUCHSTART at ' + new Date().toLocaleTimeString();
+          return;
+        }
+        el = el.parentElement;
+      }
+    });
+  </script>
+</body>
+</html>
